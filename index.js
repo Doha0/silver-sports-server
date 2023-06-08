@@ -2,6 +2,7 @@ const express = require('express');
 const app = express();
 const cors = require('cors');
 const { MongoClient, ServerApiVersion } = require('mongodb');
+const jwt = require('jsonwebtoken');
 require('dotenv').config();
 const port = process.env.PORT || 5000;
 
@@ -31,12 +32,20 @@ async function run() {
         // await client.connect();
 
         const studentsCollection = client.db("SilverDB").collection("students");
+        const classCollection = client.db("SilverDB").collection("class");
+        const InstructorsCollection = client.db("SilverDB").collection("instructors");
 
 
 
         // students collection
-        app.get('/students', verifyJWT, verifyAdmin, async (req, res) => {
-            const result = await usersCollection.find().toArray();
+        app.get('/students', async (req, res) => {
+            const result = await studentsCollection.find().toArray();
+            res.send(result);
+        });
+
+        // Instructors collection
+        app.get('/instructors', async (req, res) => {
+            const result = await InstructorsCollection.find().toArray();
             res.send(result);
         });
 
