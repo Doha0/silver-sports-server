@@ -1,7 +1,7 @@
 const express = require('express');
 const app = express();
 const cors = require('cors');
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const jwt = require('jsonwebtoken');
 require('dotenv').config();
 const port = process.env.PORT || 5000;
@@ -14,19 +14,19 @@ app.use(express.json());
 const verifyJWT = (req, res, next) => {
     const authorization = req.headers.authorization;
     if (!authorization) {
-      return res.status(401).send({ error: true, message: 'unauthorized access' });
+        return res.status(401).send({ error: true, message: 'unauthorized access' });
     }
-    
+
     const token = authorization.split(' ')[1];
-  
+
     jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
-      if (err) {
-        return res.status(401).send({ error: true, message: 'unauthorized access' })
-      }
-      req.decoded = decoded;
-      next();
+        if (err) {
+            return res.status(401).send({ error: true, message: 'unauthorized access' })
+        }
+        req.decoded = decoded;
+        next();
     })
-  }
+}
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.2mmen1j.mongodb.net/?retryWrites=true&w=majority`;
 
@@ -49,10 +49,24 @@ async function run() {
         const InstructorsCollection = client.db("SilverDB").collection("instructors");
 
 
+        app.post('/jwt', (req, res) => {
+            const user = req.body;
+            const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '1h' })
+
+            res.send({ token })
+        })
+
 
         // ----------------------students collection----------------
         app.get('/students', async (req, res) => {
-            const result = await studentsCollection.find().toArray();
+            const email = req.query.email;
+
+            if (!email) {
+                res.send([]);
+            }
+
+            const query = { email: email };
+            const result = await studentsCollection.find(query).toArray();
             res.send(result);
         });
 
@@ -60,7 +74,14 @@ async function run() {
             const classes = req.body;
             const result = await studentsCollection.insertOne(classes);
             res.send(result);
-        })
+        });
+
+        app.delete('/students/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) };
+            const result = await studentsCollection.deleteOne(query);
+            res.send(result);
+        });
 
 
         // ---------------------Instructors collection-----------------
