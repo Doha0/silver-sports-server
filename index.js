@@ -2,8 +2,9 @@ const express = require('express');
 const app = express();
 const cors = require('cors');
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
-const jwt = require('jsonwebtoken');
 require('dotenv').config();
+const jwt = require('jsonwebtoken');
+const stripe = require("stripe")(process.env.PAYMENT_SECRET_KEY);
 const port = process.env.PORT || 5000;
 
 // middleware
@@ -47,6 +48,7 @@ async function run() {
         const studentsCollection = client.db("SilverDB").collection("students");
         const classCollection = client.db("SilverDB").collection("class");
         const InstructorsCollection = client.db("SilverDB").collection("instructors");
+        const paymentCollection = client.db("SilverDB").collection("payments");
 
 
         app.post('/jwt', (req, res) => {
@@ -55,6 +57,43 @@ async function run() {
 
             res.send({ token })
         })
+
+        // ---------------------------payment-----------------------
+        app.get("/payment/:id", async (req, res) => {
+            const id = req.params.id;
+            const query = {
+                _id: new ObjectId(id)
+            };
+            const result = await studentsCollection.findOne(query);
+            res.send(result);
+        });
+
+        app.post('/create-payment-intent', verifyJWT, async (req, res) => {
+            const { price } = req.body;
+            const amount = parseInt(price * 100);
+            const paymentIntent = await stripe.paymentIntents.create({
+                amount: amount,
+                currency: 'usd',
+                payment_method_types: ['card']
+            });
+
+            res.send({
+                clientSecret: paymentIntent.client_secret
+            })
+        })
+
+
+        // payment related api
+        app.post("/payments", verifyJWT, async (req, res) => {
+            const payment = req.body;
+            const insertResult = await paymentCollection.insertOne(payment);
+            const query = { _id: new ObjectId(payment.courseId) };
+            const deleteResult = await studentsCollection.deleteOne(query);
+
+            res.send({ insertResult, deleteResult });
+        });
+
+
 
 
         // ----------------------students collection----------------
