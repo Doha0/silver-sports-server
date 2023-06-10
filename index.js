@@ -96,6 +96,21 @@ async function run() {
             res.send(result);
         });
 
+        app.post('/class', async (req, res) => {
+            const classes = req.body;
+            const result = await classCollection.insertOne(classes);
+            res.send(result);
+        });
+
+        app.get('/course', async (req, res) => {
+            const email = req.query.email;
+
+            const query = { instructor_email: email }
+            // console.log(query);
+            const result = await classCollection.find(query).toArray();
+            res.send(result);
+        });
+
 
 
         // Send a ping to confirm a successful connection
