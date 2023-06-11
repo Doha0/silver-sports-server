@@ -94,6 +94,29 @@ async function run() {
         });
 
 
+        // ----------------------Enroll-------------------
+        app.get('/enroll', async (req, res) => {
+            const email = req.query.email;
+
+            if (!email) {
+                res.send([]);
+            }
+
+            const query = { email: email };
+            const result = await paymentCollection.find(query).toArray();
+            res.send(result);
+        });
+
+        // ----------------------Payment History-------------------
+        app.get('/history', async (req, res) => {
+            const email = req.query.email;
+            if (!email) {
+                res.send([]);
+            }
+            const query = { email: email };
+            const result = await paymentCollection.find(query).sort({ date: -1 }).toArray();
+            res.send(result);
+        });
 
 
         // ----------------------students collection----------------
