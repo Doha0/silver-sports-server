@@ -158,7 +158,23 @@ async function run() {
         });
 
         // -----------------Class collection--------------------
-        app.get('/class', async (req, res) => {
+        app.get("/class", async (req, res) => {
+            const approvedClasses = req.query?.approve;
+            const limit = req.query?.limit;
+            const filter = { status: "approve" };
+
+            if (approvedClasses) {
+                const result = await classCollection.find(filter).toArray();
+                res.send(result);
+                return;
+            }
+
+            if (limit) {
+                const result = await classCollection.find(filter).limit(parseInt(limit)).toArray();
+                res.send(result);
+                return
+            }
+
             const result = await classCollection.find().toArray();
             res.send(result);
         });
@@ -178,8 +194,17 @@ async function run() {
             res.send(result);
         });
 
-        app.get('/popularclass', async (req, res) => {
-            const result = await classCollection.find().toArray();
+
+        app.patch("/class/:id", async (req, res) => {
+            const id = req.params.id;
+            const status = req.query?.status;
+            const filter = { _id: new ObjectId(id) };
+            const updateDoc = {
+                $set: {
+                    status: status,
+                },
+            };
+            const result = await classCollection.updateOne(filter, updateDoc);
             res.send(result);
         });
 
