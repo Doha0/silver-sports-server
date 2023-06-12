@@ -45,6 +45,7 @@ async function run() {
         // Connect the client to the server	(optional starting in v4.7)
         client.connect();
 
+        const usersCollection = client.db("SilverDB").collection("users");
         const studentsCollection = client.db("SilverDB").collection("students");
         const classCollection = client.db("SilverDB").collection("class");
         const InstructorsCollection = client.db("SilverDB").collection("instructors");
@@ -58,6 +59,73 @@ async function run() {
             res.send({ token })
         })
 
+
+        // ---------------------------User-----------------------
+        app.get('/users', verifyJWT, async (req, res) => {
+            const result = await usersCollection.find().toArray();
+            res.send(result);
+        });
+
+        app.post('/users', async (req, res) => {
+            const user = req.body;
+            const query = { email: user.email }
+            const existingUser = await usersCollection.findOne(query);
+
+            if (existingUser) {
+                return res.send({ message: 'user already exists' })
+            }
+
+            const result = await usersCollection.insertOne(user);
+            res.send(result);
+        });
+
+        app.patch("/users/role", async (req, res) => {
+            const email = req.query?.email;
+            const role = req.query?.role;
+            const filter = { email: email };
+            const updateDoc = {
+                $set: {
+                    role: role,
+                },
+            };
+            const result = await usersCollection.updateOne(filter, updateDoc);
+            res.send(result);
+        });
+
+        // ------------- roles-------------------
+        app.get("/users/admin/:email", verifyJWT, async (req, res) => {
+            const email = req.params.email;
+            if (req.decoded.email !== email) {
+                res.send({ admin: false });
+            }
+            const query = { email: email };
+            const user = await usersCollection.findOne(query);
+            const result = { admin: user?.role === "admin" };
+            res.send(result);
+        });
+
+        app.get("/users/instructor/:email", verifyJWT, async (req, res) => {
+            const email = req.params.email;
+            if (req.decoded.email !== email) {
+                res.send({ instructor: false });
+            }
+            const query = { email: email };
+            const user = await usersCollection.findOne(query);
+            const result = { instructor: user?.role === "instructor" };
+            res.send(result);
+        });
+
+        app.get("/users/student/:email", verifyJWT, async (req, res) => {
+            const email = req.params.email;
+            if (req.decoded.email !== email) {
+                res.send({ instructor: false });
+            }
+            const query = { email: email };
+            const user = await usersCollection.findOne(query);
+            const result = { instructor: user?.role === "instructor" };
+            res.send(result);
+        });
+        
         // ---------------------------payment-----------------------
         app.get("/payment/:id", async (req, res) => {
             const id = req.params.id;
@@ -99,6 +167,8 @@ async function run() {
 
             res.send({ insertResult, seatsResult, deleteResult });
         });
+
+
 
 
         // ----------------------Enroll-------------------
@@ -228,17 +298,17 @@ async function run() {
             const filter = { _id: new ObjectId(id) };
             const options = { upsert: true };
             const updateDoc = {
-              $set: {
-                feedback,
-              },
+                $set: {
+                    feedback,
+                },
             };
             const result = await classCollection.updateOne(
-              filter,
-              updateDoc,
-              options
+                filter,
+                updateDoc,
+                options
             );
             res.send(result);
-          });
+        });
 
 
 
