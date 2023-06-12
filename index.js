@@ -152,6 +152,11 @@ async function run() {
             res.send(result);
         });
 
+        app.get('/popularinstructors', async (req, res) => {
+            const result = await InstructorsCollection.find().limit(6).toArray();
+            res.send(result);
+        });
+
         // -----------------Class collection--------------------
         app.get('/class', async (req, res) => {
             const result = await classCollection.find().toArray();
@@ -170,6 +175,11 @@ async function run() {
             const query = { instructor_email: email }
             // console.log(query);
             const result = await classCollection.find(query).toArray();
+            res.send(result);
+        });
+
+        app.get('/popularclass', async (req, res) => {
+            const result = await classCollection.find().toArray();
             res.send(result);
         });
 
