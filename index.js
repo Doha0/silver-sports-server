@@ -122,10 +122,10 @@ async function run() {
             }
             const query = { email: email };
             const user = await usersCollection.findOne(query);
-            const result = { instructor: user?.role === "instructor" };
+            const result = { instructor: user?.role === "student" };
             res.send(result);
         });
-        
+
         // ---------------------------payment-----------------------
         app.get("/payment/:id", async (req, res) => {
             const id = req.params.id;
