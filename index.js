@@ -88,9 +88,16 @@ async function run() {
             const payment = req.body;
             const insertResult = await paymentCollection.insertOne(payment);
             const query = { _id: new ObjectId(payment.courseId) };
+            const updatedDoc = {
+                $set: {
+                    $inc: { availableSeats: -1 },
+                }
+            }
+            const seatsResult = await classCollection.updateOne(query, updatedDoc);
+            console.log(seatsResult);
             const deleteResult = await studentsCollection.deleteOne(query);
 
-            res.send({ insertResult, deleteResult });
+            res.send({ insertResult, seatsResult, deleteResult });
         });
 
 
@@ -207,6 +214,31 @@ async function run() {
             const result = await classCollection.updateOne(filter, updateDoc);
             res.send(result);
         });
+
+        app.get('/feedback/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) }
+            const result = await classCollection.findOne(query);
+            res.send(result);
+        });
+
+        app.put("/feedback/:id", async (req, res) => {
+            const id = req.params.id;
+            const { feedback } = req.body;
+            const filter = { _id: new ObjectId(id) };
+            const options = { upsert: true };
+            const updateDoc = {
+              $set: {
+                feedback,
+              },
+            };
+            const result = await classCollection.updateOne(
+              filter,
+              updateDoc,
+              options
+            );
+            res.send(result);
+          });
 
 
 
